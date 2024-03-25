@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\RenderObjects.cpp" />
     <ClCompile Include="src\Dx12Render\Camera.cpp" />
     <ClCompile Include="src\Dx12Render\D3DApp.cpp" />
     <ClCompile Include="src\Dx12Render\d3dUtil.cpp" />
@@ -162,6 +163,7 @@
     <ClCompile Include="src\RenderLab.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\RenderObjects.h" />
     <ClInclude Include="src\Dx12Render\Camera.h" />
     <ClInclude Include="src\Dx12Render\D3DApp.h" />
     <ClInclude Include="src\Dx12Render\d3dUtil.h" />
@@ -181,7 +183,10 @@
     <ClInclude Include="src\ImGui\imstb_truetype.h" />
     <ClInclude Include="src\ImGui\KiaHaloUI.h" />
     <ClInclude Include="src\RenderLab.h" />
-    <ClInclude Include="src\RenderObjects.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\Shaders\color.txt" />
+    <Text Include="src\Shaders\default.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

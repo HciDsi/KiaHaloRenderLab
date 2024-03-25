@@ -72,12 +72,12 @@
     <ClCompile Include="src\Dx12Render\MathHelper.cpp">
       <Filter>Dx12Render</Filter>
     </ClCompile>
+    <ClCompile Include="src\RenderObjects.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RenderLab.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\RenderObjects.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\ImGui\imconfig.h">
@@ -134,5 +134,12 @@
     <ClInclude Include="src\Dx12Render\UploadBuffer.h">
       <Filter>Dx12Render</Filter>
     </ClInclude>
+    <ClInclude Include="src\RenderObjects.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\Shaders\default.txt" />
+    <Text Include="src\Shaders\color.txt" />
   </ItemGroup>
 </Project>

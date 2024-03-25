@@ -29,7 +29,7 @@ public:
 	virtual void OnResize();
 protected:
 	
-	virtual void CreateRtvAndDsvDescriptorHeap();
+	virtual void CreateDescriptorHeap();
 
 	void CreateDevice();
 	void CreateFence();
@@ -39,7 +39,7 @@ protected:
 	void CreateDsv();
 	void SetViewportAndRedct();
 
-	void FlushCmdQueue();
+	void FlushCommandQueue();
 
 	ID3D12Resource* CurrBackBuffer()const;
 	D3D12_CPU_DESCRIPTOR_HANDLE CurrBackBufferView()const;
@@ -69,6 +69,7 @@ protected:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDsvHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mSrvHeap;
 
 	D3D12_VIEWPORT mScreenViewport;
 	D3D12_RECT mScissorRect;

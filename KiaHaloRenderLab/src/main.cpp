@@ -2,8 +2,8 @@
 
 HWND mMainWnd = 0;
 RenderLab* rl;
-int mClientWidth = 800;
-int mClientHeight = 600;
+int mClientWidth = 1200;
+int mClientHeight = 900;
 
 bool InitWindowsApp(HINSTANCE hInstance, int show);
 
@@ -15,6 +15,9 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstanc, HINSTANCE hPrevInstance,
 	PSTR pCmdLine, int nCmdShow)
 {
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+
 	if (!InitWindowsApp(hInstanc, nCmdShow))
 		return 0;
 
@@ -45,15 +48,18 @@ bool InitWindowsApp(HINSTANCE hInstance, int show)
 		MessageBox(0, L"+++", 0, 0);
 		return false;
 	}
-
+	RECT R = { 0, 0, mClientWidth, mClientHeight };
+	AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
+	int width = R.right - R.left;
+	int height = R.bottom - R.top;
 	mMainWnd = CreateWindow(
 		L"MainWnd",
 		L"D3DApp",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		mClientWidth,
-		mClientHeight,
+		width,
+		height,
 		0,
 		0,
 		hInstance,
@@ -107,13 +113,22 @@ int Run()
 	return (int)msg.wParam;
 }
 
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT CALLBACK
 WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) {
+		return true;
+	}
+
+	const ImGuiIO imio = ImGui::GetIO();
+
 	switch (msg)
 	{
 	case WM_LBUTTONDOWN:
-		MessageBox(0, L"===", L"***", MB_OK);
+		//MessageBox(0, L"===", L"***", MB_OK);
 		return 0;
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE)
@@ -121,6 +136,12 @@ WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		return 0;
+	case WM_MOUSEMOVE:
+		if (imio.WantCaptureMouse)
+		{
+			break;
+		}
 		return 0;
 	}
 

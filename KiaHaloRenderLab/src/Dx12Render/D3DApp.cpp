@@ -15,7 +15,7 @@ D3DApp::D3DApp(HWND hwnd, int h, int w)
 D3DApp::~D3DApp()
 {
 	if (mDevice != nullptr)
-		FlushCmdQueue();
+		FlushCommandQueue();
 }
 
 D3DApp* D3DApp::mApp = nullptr;
@@ -46,7 +46,7 @@ bool D3DApp::Initialize()
 	CreateCmdObjects();
 	CreateSwapChain();
 
-	CreateRtvAndDsvDescriptorHeap();
+	CreateDescriptorHeap();
 
 	OnResize();
 }
@@ -58,7 +58,7 @@ void D3DApp::OnResize()
 	assert(mCmdAlloc);
 
 	// Flush before changing any resources.
-	FlushCmdQueue();
+	FlushCommandQueue();
 
 	ThrowIfFailed(mCmdList->Reset(mCmdAlloc.Get(), nullptr));
 
@@ -88,31 +88,39 @@ void D3DApp::OnResize()
 //--------------------DirectX 初始化--------------------
 void D3DApp::CreateDevice()
 {
+	// 创建DXGI工厂
 	ThrowIfFailed(
 		CreateDXGIFactory1(
 			IID_PPV_ARGS(&mFactory)
 		)
 	);
 
+	// 创建Direct3D 12设备
 	ThrowIfFailed(
 		D3D12CreateDevice(
 			nullptr,
-			D3D_FEATURE_LEVEL_12_0,
+			D3D_FEATURE_LEVEL_12_0, // 使用的最低功能级别为Direct3D 12.0
 			IID_PPV_ARGS(&mDevice)
 		)
 	);
 
+	// 获取渲染目标视图描述符大小
 	mRtvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	// 获取深度/模板视图描述符大小
 	mDsvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	// 获取常量缓冲区/着色器资源/无序访问视图描述符大小
 	mCbvSrvUavDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void D3DApp::CreateFence()
 {
+	// 创建一个新的围栏对象
 	ThrowIfFailed(
 		mDevice->CreateFence(
-			0,
-			D3D12_FENCE_FLAG_NONE,
+			0,                          // 初始围栏值，通常为0
+			D3D12_FENCE_FLAG_NONE,     // 围栏标志，这里没有使用任何标志
 			IID_PPV_ARGS(&mFence)
 		)
 	);
@@ -120,99 +128,123 @@ void D3DApp::CreateFence()
 
 void D3DApp::CreateCmdObjects()
 {
-	D3D12_COMMAND_QUEUE_DESC qd = {};
-	qd.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	qd.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	// 创建命令队列
+	D3D12_COMMAND_QUEUE_DESC qd = {}; // 初始化命令队列描述符结构体
+	qd.Type = D3D12_COMMAND_LIST_TYPE_DIRECT; // 指定命令队列类型为直接命令列表
+	qd.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE; // 指定命令队列标志为无
 	ThrowIfFailed(
 		mDevice->CreateCommandQueue(
 			&qd,
-			IID_PPV_ARGS(&mCmdQueue)
+			IID_PPV_ARGS(&mCmdQueue) // 创建命令队列并获取其接口指针
 		)
 	);
 
+	// 创建命令分配器
 	ThrowIfFailed(
 		mDevice->CreateCommandAllocator(
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			IID_PPV_ARGS(&mCmdAlloc)
+			D3D12_COMMAND_LIST_TYPE_DIRECT, // 指定命令分配器关联的命令列表类型为直接命令列表
+			IID_PPV_ARGS(&mCmdAlloc) // 创建命令分配器并获取其接口指针
 		)
 	);
 
+	// 创建命令列表
 	ThrowIfFailed(
 		mDevice->CreateCommandList(
-			0,
-			D3D12_COMMAND_LIST_TYPE_DIRECT,
-			mCmdAlloc.Get(),
-			nullptr,
-			IID_PPV_ARGS(&mCmdList)
+			0, // 指定节点掩码为0，表示命令列表在所有GPU节点上都可执行
+			D3D12_COMMAND_LIST_TYPE_DIRECT, // 指定命令列表类型为直接命令列表
+			mCmdAlloc.Get(), // 关联命令分配器
+			nullptr, // 关联流水线状态对象（Pipeline State Object，PSO），这里为空
+			IID_PPV_ARGS(&mCmdList) // 创建命令列表并获取其接口指针
 		)
 	);
 
+	// 关闭命令列表（初始化状态）
 	mCmdList->Close();
 }
 
 void D3DApp::CreateSwapChain()
 {
+	// 定义交换链描述符并设置其属性
 	DXGI_SWAP_CHAIN_DESC sc;
-	sc.BufferDesc.Width = mClientWidth;
-	sc.BufferDesc.Height = mClientHeight;
-	sc.BufferDesc.RefreshRate.Denominator = 1;
-	sc.BufferDesc.RefreshRate.Numerator = 60;
-	sc.BufferDesc.Format = mBackBufferFormat;
-	sc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	sc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	sc.SampleDesc.Count = 1;
-	sc.SampleDesc.Quality = 0;
-	sc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sc.BufferCount = SwapChainBufferCount;
-	sc.OutputWindow = mWnd;
-	sc.Windowed = true;
-	sc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	sc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	sc.BufferDesc.Width = mClientWidth;										// 缓冲区宽度
+	sc.BufferDesc.Height = mClientHeight;									// 缓冲区高度
+	sc.BufferDesc.RefreshRate.Denominator = 1;								// 刷新率的分母
+	sc.BufferDesc.RefreshRate.Numerator = 60;								// 刷新率的分子
+	sc.BufferDesc.Format = mBackBufferFormat;								// 缓冲区格式
+	sc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;	// 扫描线排序方式
+	sc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;					// 缩放方式
+	sc.SampleDesc.Count = 1;												// 多重采样的样本数量
+	sc.SampleDesc.Quality = 0;												// 多重采样的质量级别
+	sc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;						// 缓冲区的使用方式
+	sc.BufferCount = SwapChainBufferCount;									// 缓冲区数量
+	sc.OutputWindow = mWnd;													// 输出窗口句柄
+	sc.Windowed = true;														// 是否为窗口模式
+	sc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;							// 交换链效果
+	sc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;						// 交换链标志
 
+	// 创建交换链
 	ThrowIfFailed(
 		mFactory->CreateSwapChain(
-			mCmdQueue.Get(),
-			&sc,
-			&mSwapChain
+			mCmdQueue.Get(),       // 与交换链相关联的命令队列
+			&sc,                   // 交换链描述符
+			&mSwapChain            // 用于接收交换链接口指针的变量
 		)
 	);
 }
 
-void D3DApp::CreateRtvAndDsvDescriptorHeap()
+void D3DApp::CreateDescriptorHeap()
 {
+	// 创建渲染目标视图（RTV）描述符堆
 	D3D12_DESCRIPTOR_HEAP_DESC rtvDesc;
-	rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	rtvDesc.NumDescriptors = SwapChainBufferCount;
+	rtvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;         // 描述符堆类型为渲染目标视图
+	rtvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;      // 无标志
+	rtvDesc.NumDescriptors = SwapChainBufferCount;         // 描述符数量为交换链缓冲区数量
 	rtvDesc.NodeMask = 0;
 	ThrowIfFailed(
 		mDevice->CreateDescriptorHeap(
-			&rtvDesc,
-			IID_PPV_ARGS(&mRtvHeap)
+			&rtvDesc,                                       // 描述符堆描述符
+			IID_PPV_ARGS(&mRtvHeap)                         // 创建渲染目标视图描述符堆
 		)
 	);
 
+	// 创建深度/模板缓冲区视图（DSV）描述符堆
 	D3D12_DESCRIPTOR_HEAP_DESC dsvDesc;
-	dsvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	dsvDesc.NumDescriptors = 1;
+	dsvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;         // 描述符堆类型为深度/模板缓冲区视图
+	dsvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;       // 无标志
+	dsvDesc.NumDescriptors = 1;                            // 描述符数量为1
 	dsvDesc.NodeMask = 0;
 	ThrowIfFailed(
 		mDevice->CreateDescriptorHeap(
-			&dsvDesc,
-			IID_PPV_ARGS(&mDsvHeap)
+			&dsvDesc,                                       // 描述符堆描述符
+			IID_PPV_ARGS(&mDsvHeap)                         // 创建深度/模板缓冲区视图描述符堆
+		)
+	);
+
+	// 创建常量缓冲区、着色器资源视图和无序访问视图（CBV/SRV/UAV）描述符堆
+	D3D12_DESCRIPTOR_HEAP_DESC srvDesc;
+	srvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; // 描述符堆类型为CBV/SRV/UAV
+	srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;       // 无标志
+	srvDesc.NumDescriptors = 1;                            // 描述符数量为1
+	srvDesc.NodeMask = 0;
+	ThrowIfFailed(
+		mDevice->CreateDescriptorHeap(
+			&srvDesc,                                       // 描述符堆描述符
+			IID_PPV_ARGS(&mSrvHeap)                         // 创建CBV/SRV/UAV描述符堆
 		)
 	);
 }
 
 void D3DApp::CreateRtv()
 {
+	// 获取渲染目标视图描述符堆的CPU句柄
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 		mRtvHeap->GetCPUDescriptorHandleForHeapStart()
 	);
 
+	// 遍历交换链缓冲区，为每个缓冲区创建渲染目标视图
 	for (int i = 0; i < SwapChainBufferCount; i++)
 	{
+		// 获取交换链缓冲区
 		ThrowIfFailed(
 			mSwapChain->GetBuffer(
 				i,
@@ -220,12 +252,14 @@ void D3DApp::CreateRtv()
 			)
 		);
 
+		// 创建渲染目标视图并将其绑定到描述符堆中的相应位置
 		mDevice->CreateRenderTargetView(
-			mSwapChainBuffer[i].Get(),
-			nullptr,
-			rtvHandle
+			mSwapChainBuffer[i].Get(),  // 缓冲区指针
+			nullptr,                     // 渲染目标视图的描述符（nullptr表示使用默认参数）
+			rtvHandle                    // 渲染目标视图描述符的CPU句柄
 		);
 
+		// 偏移到下一个渲染目标视图描述符
 		rtvHandle.Offset(1, mRtvDescriptorSize);
 	}
 }
@@ -234,7 +268,7 @@ void D3DApp::CreateDsv()
 {
 	D3D12_RESOURCE_DESC rd;
 	rd.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	rd.Width = mClientHeight;
+	rd.Width = mClientWidth;
 	rd.Height = mClientHeight;
 	rd.DepthOrArraySize = 1;
 	rd.Alignment = 0;
@@ -280,7 +314,7 @@ void D3DApp::CreateDsv()
 void D3DApp::SetViewportAndRedct()
 {
 	mScreenViewport.TopLeftX = 0;
-	mScreenViewport.TopLeftY = 0;
+	mScreenViewport.TopLeftY =0;
 	mScreenViewport.Width = mClientWidth;
 	mScreenViewport.Height = mClientHeight;
 	mScreenViewport.MinDepth = 0.0f;
@@ -288,27 +322,37 @@ void D3DApp::SetViewportAndRedct()
 	
 	mScissorRect.top = 0;                      
 	mScissorRect.left = 0;                     
-	mScissorRect.right = mClientWidth;    
+	mScissorRect.right = mClientWidth;
 	mScissorRect.bottom = mClientHeight; 
 }
 
-void D3DApp::FlushCmdQueue()
+void D3DApp::FlushCommandQueue()
 {
+	// 递增当前围栏值
 	mCurrentFence++;
+
+	// 向命令队列发出信号，表示当前围栏已经达到指定的值
 	ThrowIfFailed(
 		mCmdQueue->Signal(mFence.Get(), mCurrentFence)
 	);
 
+	// 检查是否已经完成了之前的命令
 	if (mFence->GetCompletedValue() < mCurrentFence)
 	{
+		// 创建一个新的事件对象
 		auto evenHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
 
+		// 设置当围栏值达到指定值时触发事件
 		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, evenHandle));
 
+		// 等待事件触发，表示当前围栏已经完成
 		WaitForSingleObject(evenHandle, INFINITE);
+
+		// 关闭事件句柄
 		CloseHandle(evenHandle);
 	}
 }
+
 
 ID3D12Resource* D3DApp::CurrBackBuffer() const
 {
