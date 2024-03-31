@@ -138,8 +138,4 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="src\Shaders\default.txt" />
-    <Text Include="src\Shaders\color.txt" />
-  </ItemGroup>
 </Project>

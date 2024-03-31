@@ -37,6 +37,7 @@ protected:
 	void CreateSwapChain();
 	void CreateRtv();
 	void CreateDsv();
+	void CreateSrv();
 	void SetViewportAndRedct();
 
 	void FlushCommandQueue();
@@ -44,6 +45,9 @@ protected:
 	ID3D12Resource* CurrBackBuffer()const;
 	D3D12_CPU_DESCRIPTOR_HANDLE CurrBackBufferView()const;
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView()const;
+	D3D12_GPU_DESCRIPTOR_HANDLE ShaderResourceView()const;
+
+	void CopyRenderTargetToTexture();
 
 	void CalculateFrameStats();
 protected:
@@ -66,6 +70,7 @@ protected:
 	int mCurrBackBuffer = 0;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[SwapChainBufferCount];
 	Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mShaderResouceBuffer;
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDsvHeap;

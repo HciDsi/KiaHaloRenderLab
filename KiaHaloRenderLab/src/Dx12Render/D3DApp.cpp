@@ -77,6 +77,7 @@ void D3DApp::OnResize()
 	mCurrBackBuffer = 0;
 	CreateRtv();
 	CreateDsv();
+	CreateSrv();
 	
 	mCmdList->Close();
 	ID3D12CommandList* cmdList[] = { mCmdList.Get() };
@@ -222,9 +223,9 @@ void D3DApp::CreateDescriptorHeap()
 
 	// 创建常量缓冲区、着色器资源视图和无序访问视图（CBV/SRV/UAV）描述符堆
 	D3D12_DESCRIPTOR_HEAP_DESC srvDesc;
-	srvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; // 描述符堆类型为CBV/SRV/UAV
-	srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;       // 无标志
-	srvDesc.NumDescriptors = 1;                            // 描述符数量为1
+	srvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; 
+	srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;       
+	srvDesc.NumDescriptors = 1;                            
 	srvDesc.NodeMask = 0;
 	ThrowIfFailed(
 		mDevice->CreateDescriptorHeap(
@@ -311,6 +312,60 @@ void D3DApp::CreateDsv()
 	);
 }
 
+void D3DApp::CreateSrv()
+{
+	D3D12_RESOURCE_DESC rd;
+	rd.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	rd.Width = mClientWidth;
+	rd.Height = mClientHeight;
+	rd.DepthOrArraySize = 1;
+	rd.Alignment = 0;
+	rd.MipLevels = 1;
+	rd.Format = mBackBufferFormat;
+	rd.SampleDesc.Count = 1;
+	rd.SampleDesc.Quality = 0;
+	rd.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	rd.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+	D3D12_CLEAR_VALUE cv;
+	cv.Format = mDepthStencilFormat;
+	cv.DepthStencil.Depth = 1.0f;
+	cv.DepthStencil.Stencil = 0.0f;
+
+	ThrowIfFailed(
+		mDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&rd,
+			D3D12_RESOURCE_STATE_COMMON,
+			nullptr,
+			IID_PPV_ARGS(&mShaderResouceBuffer)
+		)
+	);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = mBackBufferFormat;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	mDevice->CreateShaderResourceView(
+		mShaderResouceBuffer.Get(),
+		&srvDesc,
+		mSrvHeap->GetCPUDescriptorHandleForHeapStart()
+	);
+
+	/*mCmdList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			mShaderResouceBuffer.Get(),
+			D3D12_RESOURCE_STATE_COMMON,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE
+		)
+	);*/
+}
+
 void D3DApp::SetViewportAndRedct()
 {
 	mScreenViewport.TopLeftX = 0;
@@ -371,4 +426,42 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::CurrBackBufferView() const
 D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView() const
 {
 	return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE D3DApp::ShaderResourceView() const
+{
+	return mSrvHeap->GetGPUDescriptorHandleForHeapStart();
+}
+
+void D3DApp::CopyRenderTargetToTexture()
+{
+	D3D12_RESOURCE_BARRIER barr = CD3DX12_RESOURCE_BARRIER::Transition(
+		CurrBackBuffer(),
+		D3D12_RESOURCE_STATE_PRESENT,
+		D3D12_RESOURCE_STATE_COPY_SOURCE
+	);
+	mCmdList->ResourceBarrier(1, &barr);
+
+	barr = CD3DX12_RESOURCE_BARRIER::Transition(
+		mShaderResouceBuffer.Get(),
+		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_COPY_DEST
+	);
+	mCmdList->ResourceBarrier(1, &barr);
+
+	mCmdList->CopyResource(mShaderResouceBuffer.Get(), CurrBackBuffer());
+
+	barr = CD3DX12_RESOURCE_BARRIER::Transition(
+		CurrBackBuffer(),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_COMMON
+	);
+	mCmdList->ResourceBarrier(1, &barr);
+
+	barr = CD3DX12_RESOURCE_BARRIER::Transition(
+		mShaderResouceBuffer.Get(),
+		D3D12_RESOURCE_STATE_COPY_SOURCE,
+		D3D12_RESOURCE_STATE_PRESENT
+	);
+	mCmdList->ResourceBarrier(1, &barr);
 }

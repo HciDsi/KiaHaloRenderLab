@@ -24,6 +24,7 @@ private:
 
 	void UpdateCamera();
 	void UpdatePassCB();
+	void UpdateMaterialCB();
 	void UpdateObjectCB();
 
 	bool InitImGui();
@@ -33,11 +34,14 @@ private:
 	void BuildRootSignaturn();
 	void BuildShadersAndIputLayout();
 	void BuildGoeMesh();
-	void BuildPSOs();
+	void BuildMaterial();
 	void BuildRenderItem();
 	void BuildFrameresouce();
+	void BuildPSOs();
 
 	void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
+
+	ImTextureID GetRenderTextureID();
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mImGuiSrvHeap;
@@ -47,11 +51,16 @@ private:
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3DBlob>> mShaders;
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
-	std::unique_ptr<MeshGeometry> mGeos;
+	//std::unique_ptr<MeshGeometry> mGeos;
+	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeos;
 
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>> mPSOs;
 
-	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+	std::unordered_map<std::string, std::unique_ptr<Material>> mMats;
+
+	//std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+	std::unordered_map<std::string, std::unique_ptr<RenderItem>> mAllRitems;
+	std::vector<std::string> mRiNames;
 	std::vector<RenderItem*> mRitem;
 
 	const int NumFrameResource = 3;
@@ -72,4 +81,3 @@ private:
 
 	ImVec4 clear_color = ImVec4(1.000000000f, 0.713725507f, 0.756862819f, 1.000000000f); //Colors::LightPink
 };
-
