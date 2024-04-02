@@ -75,8 +75,10 @@ private:
 	DirectX::XMFLOAT4X4 mView = MathHelper::Identity4x4();
 	DirectX::XMFLOAT4X4 mProj = MathHelper::Identity4x4();
 
-	float mTheta = 1.5f * 3.14f;
-	float mPhi = 0.2f * 3.14f;
+	Light mMainLight;
+
+	float mTheta = 1.5f * MathHelper::Pi;
+	float mPhi = 0.2f * MathHelper::Pi;
 	float mRadius = 15.0f;
 
 	ImVec4 clear_color = ImVec4(1.000000000f, 0.713725507f, 0.756862819f, 1.000000000f); //Colors::LightPink

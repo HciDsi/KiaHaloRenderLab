@@ -266,7 +266,7 @@ void RenderLab::BuildRenderItem()
 
 	auto Sphere = std::make_unique<RenderItem>();
 	Sphere->Name = "Sphere";
-	//Sphere->SetTranslation(0.0f, 0.0f, 0.0f);
+	Sphere->SetTranslation(0.0f, 2.0f, 0.0f);
 	Sphere->SetScale(2.0f, 2.0f, 2.0f);
 	Sphere->NumFramesDirty = NumFrameResource;
 	Sphere->ObjCBIndex = ObjIndex++;
@@ -293,6 +293,9 @@ void RenderLab::BuildFrameresouce()
 			std::make_unique<FrameRecouce>(mDevice.Get(), 1, mAllRitems.size(), mMats.size())
 		);
 	}
+
+	mMainLight.Direction = { 0.57735f, -0.57735f, 0.57735f };
+	mMainLight.Strength = { 0.6f, 0.6f, 0.6f };
 }
 
 void RenderLab::BuildPSOs()
@@ -390,8 +393,9 @@ void RenderLab::UpdatePassCB()
 	mMainPassCB.EyePosW = mEyePos;
 
 	mMainPassCB.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
-	mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
+	mMainPassCB.Lights[0] = mMainLight;
+	//mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
+	//mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
 	//mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
 	//mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
 	//mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
@@ -413,7 +417,7 @@ void RenderLab::UpdateObjectCB()
 			XMMATRIX World = XMLoadFloat4x4(&a->GetWorld());
 
 			ObjectConstants temp;
-			XMStoreFloat4x4(&temp.World, World);
+			XMStoreFloat4x4(&temp.World, XMMatrixTranspose(World));
 
 			objCB->CopyData(a->ObjCBIndex, temp);
 
@@ -621,6 +625,19 @@ void RenderLab::RenderImGui()
 	ImGui::Text("counter = %d", counter);
 
 	ImGui::Text("Application average %.1f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+	ImGui::SeparatorText("Main Light");
+	ImVec4 lightColor = { mMainLight.Strength.x,mMainLight.Strength.y, mMainLight.Strength.z, 1.0f };
+	float lightDir[3] = { mMainLight.Direction.x,mMainLight.Direction.y,mMainLight.Direction.z };
+	if (ImGui::ColorEdit3("Light Color", (float*)&lightColor))
+	{
+		mMainLight.Strength = { lightColor.x, lightColor.y, lightColor.z };
+	}
+	if (ImGui::SliderFloat3("Lirght Dir", lightDir, -180.0f, 180.0f))
+	{
+		mMainLight.Direction = { lightDir[0], lightDir[1], lightDir[2] };
+	}
+
 	ImGui::End();
 
 	// 渲染Dear ImGui

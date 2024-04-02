@@ -48,9 +48,10 @@ DirectX::XMFLOAT4X4 RenderItem::GetWorld()
 	DirectX::XMStoreFloat4x4(
 		&World,
 		DirectX::XMMatrixScaling(scale[0], scale[1], scale[2]) *
-		DirectX::XMMatrixRotationX(rotation[0]) * DirectX::XMMatrixRotationY(rotation[1]) * DirectX::XMMatrixRotationZ(rotation[2]) *
+		DirectX::XMMatrixRotationX(rotation[0]) * 
+		DirectX::XMMatrixRotationY(rotation[1]) * 
+		DirectX::XMMatrixRotationZ(rotation[2]) *
 		DirectX::XMMatrixTranslation(translation[0], translation[1], translation[2])
-		//DirectX::XMMatrixTranslation(2.0f,5.0f, 0.0f)
 	);
 
 	return World;
