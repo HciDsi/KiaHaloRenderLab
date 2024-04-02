@@ -266,7 +266,7 @@ void RenderLab::BuildRenderItem()
 
 	auto Sphere = std::make_unique<RenderItem>();
 	Sphere->Name = "Sphere";
-	Sphere->SetTranslation(0.0f, 2.0f, 0.0f);
+	//Sphere->SetTranslation(0.0f, 0.0f, 0.0f);
 	Sphere->SetScale(2.0f, 2.0f, 2.0f);
 	Sphere->NumFramesDirty = NumFrameResource;
 	Sphere->ObjCBIndex = ObjIndex++;
