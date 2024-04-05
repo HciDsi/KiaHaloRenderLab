@@ -48,40 +48,13 @@ DirectX::XMFLOAT4X4 RenderItem::GetWorld()
 	DirectX::XMStoreFloat4x4(
 		&World,
 		DirectX::XMMatrixScaling(scale[0], scale[1], scale[2]) *
-		DirectX::XMMatrixRotationX(rotation[0]) * 
-		DirectX::XMMatrixRotationY(rotation[1]) * 
-		DirectX::XMMatrixRotationZ(rotation[2]) *
+		DirectX::XMMatrixRotationX(rotation[0] * MathHelper::Pi / 180.0f) * 
+		DirectX::XMMatrixRotationY(rotation[1] * MathHelper::Pi / 180.0f) *
+		DirectX::XMMatrixRotationZ(rotation[2] * MathHelper::Pi / 180.0f) *
 		DirectX::XMMatrixTranslation(translation[0], translation[1], translation[2])
 	);
 
 	return World;
-}
-
-//++++++++++++++++++++++++++Material++++++++++++++++++++++++++
-Material::Material()
-{
-}
-
-Material::~Material()
-{
-}
-
-void Material::SetDiffuseAlbedo(float r, float g, float b, float a)
-{
-	DiffuseAlbedo.x = r;
-	DiffuseAlbedo.y = g;
-	DiffuseAlbedo.z = b;
-	DiffuseAlbedo.w = a;
-}
-void Material::SetFresnelR0(float r)
-{
-	FresnelR0.x = r;
-	FresnelR0.y = r;
-	FresnelR0.z = r;
-}
-void Material::SetRoughness(float r)
-{
-	Roughness = r;
 }
 
 //++++++++++++++++++++++++++Frame Resouce++++++++++++++++++++++++++

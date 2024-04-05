@@ -2,7 +2,7 @@
 
 HWND mMainWnd = 0;
 RenderLab* rl;
-int mClientWidth = 1200;
+int mClientWidth = 1200 + 400;
 int mClientHeight = 900;
 
 bool InitWindowsApp(HINSTANCE hInstance, int show);

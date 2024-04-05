@@ -32,6 +32,7 @@ cbuffer cbMaterial : register(b1)
 	float4 gDiffuseAlbedo;
     float3 gFresnelR0;
     float  gRoughness;
+    float gMatellic;
 	float4x4 gMatTransform;
 };
 

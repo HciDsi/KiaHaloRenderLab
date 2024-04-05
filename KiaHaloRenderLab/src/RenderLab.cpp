@@ -79,6 +79,7 @@ void RenderLab::Draw()
 	mCmdList->RSSetScissorRects(1, &mScissorRect);
 
 	float cl[4] = { clear_color.x, clear_color.y, clear_color.z, clear_color.w };
+	//float cl[4] = { 0.0, 0.0, 0.0, 0.0 };
 	mCmdList->ClearRenderTargetView(CurrBackBufferView(), cl, 0, nullptr); //Colors::LightPink
 	mCmdList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
@@ -144,9 +145,12 @@ void RenderLab::BuildRootSignaturn()
 
 void RenderLab::BuildShadersAndIputLayout()
 {
-	mShaders["vs"] = d3dUtil::CompileShader(L"Shaders/BlinnPhone.hlsl", nullptr, "VS", "vs_5_1");
-	mShaders["ps"] = d3dUtil::CompileShader(L"Shaders/BlinnPhone.hlsl", nullptr, "PS", "ps_5_1");
+	mShaders["vs"] = d3dUtil::CompileShader(L"Shaders/PBR.hlsl", nullptr, "VS", "vs_5_1");
+	mShaders["ps"] = d3dUtil::CompileShader(L"Shaders/PBR.hlsl", nullptr, "PS", "ps_5_1");
 	
+	/*mShaders["vs"] = d3dUtil::CompileShader(L"Shaders/BlinnPhone.hlsl", nullptr, "VS", "vs_5_1");
+	mShaders["ps"] = d3dUtil::CompileShader(L"Shaders/BlinnPhone.hlsl", nullptr, "PS", "ps_5_1");*/
+
 	/*mShaders["vs"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "VS", "vs_5_1");
 	mShaders["ps"] = d3dUtil::CompileShader(L"Shaders/Default.hlsl", nullptr, "PS", "ps_5_1");*/
 
@@ -229,22 +233,34 @@ void RenderLab::BuildMaterial()
 
 	auto Grid = std::make_unique<Material>();
 	Grid->Name = "Grid";
-	Grid->MatCBIndex = 0;//MatIndex++;
+	Grid->MatCBIndex = MatIndex++;
 	Grid->NumFramesDirty = NumFrameResource;
-	Grid->DiffuseAlbedo = XMFLOAT4(0.6f, 0.4f, 0.2f, 1.0f);
+	Grid->DiffuseAlbedo = XMFLOAT4(Colors::LightGray);
 	Grid->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	Grid->Roughness = 0.1f;
+	Grid->Matellic = 0.1f;
+	Grid->Roughness = 0.8f;
 
-	auto Sphere = std::make_unique<Material>();
-	Sphere->Name = "Sphere";
-	Sphere->MatCBIndex = 1;//MatIndex++;
-	Sphere->NumFramesDirty = NumFrameResource;
-	Sphere->DiffuseAlbedo = XMFLOAT4(Colors::HotPink);
-	Sphere->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
-	Sphere->Roughness = 0.1f;
+	auto Sphere1 = std::make_unique<Material>();
+	Sphere1->Name = "Sphere1";
+	Sphere1->MatCBIndex = MatIndex++;
+	Sphere1->NumFramesDirty = NumFrameResource;
+	Sphere1->DiffuseAlbedo = XMFLOAT4(Colors::HotPink);
+	Sphere1->FresnelR0 = XMFLOAT3(0.542f, 0.497f, 0.449f);
+	Sphere1->Matellic = 0.1f;
+	Sphere1->Roughness = 0.6f;
+
+	auto Sphere2 = std::make_unique<Material>();
+	Sphere2->Name = "Sphere2";
+	Sphere2->MatCBIndex = MatIndex++;
+	Sphere2->NumFramesDirty = NumFrameResource;
+	Sphere2->DiffuseAlbedo = XMFLOAT4(Colors::LightCyan);
+	Sphere2->FresnelR0 = XMFLOAT3(1.00f, 0.782f, 0.344f);
+	Sphere2->Matellic = 0.1f;
+	Sphere2->Roughness = 0.6f;
 
 	mMats[Grid->Name] = std::move(Grid);
-	mMats[Sphere->Name] = std::move(Sphere);
+	mMats[Sphere1->Name] = std::move(Sphere1);
+	mMats[Sphere2->Name] = std::move(Sphere2);
 }
 
 void RenderLab::BuildRenderItem()
@@ -253,8 +269,7 @@ void RenderLab::BuildRenderItem()
 
 	auto Grid = std::make_unique<RenderItem>();
 	Grid->Name = "Grid";
-	//Grid->SetTranslation(0.0f, 0.0f, 0.0f);
-	Grid->SetScale(5.0f, 5.0f, 5.0f);
+	Grid->SetScale(10.0f, 5.0f, 5.0f);
 	Grid->NumFramesDirty = NumFrameResource;
 	Grid->ObjCBIndex = ObjIndex++;
 	Grid->Geo = mGeos["mGeos"].get();
@@ -264,18 +279,32 @@ void RenderLab::BuildRenderItem()
 	Grid->StartVertex = Grid->Geo->DrawArgs["Grid"].BaseVertexLocation;
 	mAllRitems[Grid->Name] = std::move(Grid);
 
-	auto Sphere = std::make_unique<RenderItem>();
-	Sphere->Name = "Sphere";
-	//Sphere->SetTranslation(0.0f, 0.0f, 0.0f);
-	Sphere->SetScale(2.0f, 2.0f, 2.0f);
-	Sphere->NumFramesDirty = NumFrameResource;
-	Sphere->ObjCBIndex = ObjIndex++;
-	Sphere->Geo = mGeos["mGeos"].get();
-	Sphere->Mat = mMats["Sphere"].get();
-	Sphere->IndexCount = Sphere->Geo->DrawArgs["Sphere"].IndexCount;
-	Sphere->StartIndex = Sphere->Geo->DrawArgs["Sphere"].StartIndexLocation;
-	Sphere->StartVertex = Sphere->Geo->DrawArgs["Sphere"].BaseVertexLocation;
-	mAllRitems[Sphere->Name] = std::move(Sphere);
+	auto Sphere1 = std::make_unique<RenderItem>();
+	Sphere1->Name = "Sphere1";
+	Sphere1->SetTranslation(2.5f, 2.0f, 0.0f);
+	Sphere1->SetScale(2.0f, 2.0f, 2.0f);
+	//Sphere1->SetScale(3.0f, 3.0f, 3.0f);
+	Sphere1->NumFramesDirty = NumFrameResource;
+	Sphere1->ObjCBIndex = ObjIndex++;
+	Sphere1->Geo = mGeos["mGeos"].get();
+	Sphere1->Mat = mMats["Sphere1"].get();
+	Sphere1->IndexCount = Sphere1->Geo->DrawArgs["Sphere"].IndexCount;
+	Sphere1->StartIndex = Sphere1->Geo->DrawArgs["Sphere"].StartIndexLocation;
+	Sphere1->StartVertex = Sphere1->Geo->DrawArgs["Sphere"].BaseVertexLocation;
+	mAllRitems[Sphere1->Name] = std::move(Sphere1);
+
+	auto Sphere2 = std::make_unique<RenderItem>();
+	Sphere2->Name = "Sphere2";
+	Sphere2->SetTranslation(-2.5f, 2.0f, 0.0f);
+	Sphere2->SetScale(2.0f, 2.0f, 2.0f);
+	Sphere2->NumFramesDirty = NumFrameResource;
+	Sphere2->ObjCBIndex = ObjIndex++;
+	Sphere2->Geo = mGeos["mGeos"].get();
+	Sphere2->Mat = mMats["Sphere2"].get();
+	Sphere2->IndexCount = Sphere2->Geo->DrawArgs["Sphere"].IndexCount;
+	Sphere2->StartIndex = Sphere2->Geo->DrawArgs["Sphere"].StartIndexLocation;
+	Sphere2->StartVertex = Sphere2->Geo->DrawArgs["Sphere"].BaseVertexLocation;
+	mAllRitems[Sphere2->Name] = std::move(Sphere2);
 
 	for (auto& a : mAllRitems)
 	{
@@ -294,8 +323,11 @@ void RenderLab::BuildFrameresouce()
 		);
 	}
 
-	mMainLight.Direction = { 0.57735f, -0.57735f, 0.57735f };
-	mMainLight.Strength = { 0.6f, 0.6f, 0.6f };
+	mMainLight1.Direction = { 0.57735f, 40.0f, -50.0f };
+	mMainLight1.Strength = { 0.6f, 0.6f, 0.6f };
+
+	mMainLight2.Direction = { 0.57735f, 40.0f, -50.0f };
+	mMainLight2.Strength = { 0.6f, 0.6f, 0.6f };
 }
 
 void RenderLab::BuildPSOs()
@@ -393,13 +425,14 @@ void RenderLab::UpdatePassCB()
 	mMainPassCB.EyePosW = mEyePos;
 
 	mMainPassCB.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
-	mMainPassCB.Lights[0] = mMainLight;
-	//mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
-	//mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
-	//mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
-	//mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
-	//mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-	//mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
+	mMainPassCB.Lights[0] = mMainLight1;
+	mMainPassCB.Lights[1] = mMainLight2;
+	/*mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
+	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };*/
+	/*mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
+	mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };*/
+	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
+	mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
 
 	auto passCB = mCurrFrameResource->PassCB.get();
 	passCB->CopyData(0, mMainPassCB);
@@ -439,6 +472,7 @@ void RenderLab::UpdateMaterialCB()
 			XMMATRIX matTransform = XMLoadFloat4x4(&a->MatTransform);
 
 			MaterialConstants temp;
+			temp.Matellic = a->Matellic;
 			temp.DiffuseAlbedo = a->DiffuseAlbedo;
 			temp.FresnelR0 = a->FresnelR0;
 			temp.Roughness = a->Roughness;
@@ -534,7 +568,9 @@ void RenderLab::RenderImGui()
 	ImGui::Combo("ObjectList", &currObjName, ObjNames, mRiNames.size(), 3);
 	auto currRitem = mAllRitems[mRiNames[currObjName]].get();
 
-	if (ImGui::CollapsingHeader("Transform")) {
+	ImGui::SeparatorText("Transform");
+	//if (ImGui::CollapsingHeader("Transform")) 
+	{
 		
 		static float translation[3];
 		static float rotation[3];
@@ -547,48 +583,48 @@ void RenderLab::RenderImGui()
 		}
 
 		// 控制物体位置的滑动条
-		if (ImGui::SliderFloat3("Translation", translation, -10.0f, 10.0f))
+		if (KiaHaloUI::DragFloat("Translation", translation, 0.1f, -10.0f, 10.0f, "XYZ"))
 		{
 			currRitem->NumFramesDirty = NumFrameResource;
 			currRitem->SetTranslation(translation);
 		}
 		// 控制物体旋转的旋钮
-		if (ImGui::SliderFloat3("Rotation", rotation, -180.0f, 180.0f))
+		if (KiaHaloUI::DragFloat("Rotation", rotation, 0.1f, -180.0f, 180.0f, "XYZ"))
 		{
 			currRitem->NumFramesDirty = NumFrameResource;
 			currRitem->SetRotation(rotation);
 		}
 		// 控制物体缩放的滑动条
-		if (ImGui::SliderFloat3("Scale", scale, 0.1f, 10.0f))
+		if (KiaHaloUI::DragFloat("Scale", scale, 0.1f, 0.1f, 100.0f, "XYZ"))
 		{
 			currRitem->NumFramesDirty = NumFrameResource;
 			currRitem->SetScale(scale);
 		}
-
-		//static float f = 25.0f;
-		//ImGui::Text("SetNextItemWidth/PushItemWidth(100)");
-		//ImGui::SameLine(); //HelpMarker("Fixed width.");
-		//ImGui::PushItemWidth(100);
-		//ImGui::DragFloat("float##1b", &f);
 	}
 
-	if (ImGui::CollapsingHeader("Material")) {
+	ImGui::SeparatorText("Material");
+	//if (ImGui::CollapsingHeader("Material")) 
+	{
 		ImVec4 diffuse = {
 			currRitem->Mat->DiffuseAlbedo.x,
 			currRitem->Mat->DiffuseAlbedo.y,
 			currRitem->Mat->DiffuseAlbedo.z,
 			currRitem->Mat->DiffuseAlbedo.w,
 		};
-		static float fresnelR0 = currRitem->Mat->FresnelR0.x;
+		static float fresnelR0[3];
+		fresnelR0[0] = currRitem->Mat->FresnelR0.x;
+		fresnelR0[1] = currRitem->Mat->FresnelR0.y;
+		fresnelR0[2] = currRitem->Mat->FresnelR0.z;
 		static float roughness = currRitem->Mat->Roughness;
+		static float matellic = currRitem->Mat->Matellic;
 
-		if (ImGui::ColorEdit3("Diffuse", (float*)&diffuse))
+		if (ImGui::ColorEdit4("Diffuse", (float*)&diffuse))
 		{
 			currRitem->Mat->SetDiffuseAlbedo(diffuse.x, diffuse.y, diffuse.z, diffuse.w);
 			currRitem->Mat->NumFramesDirty = NumFrameResource;
 		}
 		
-		if (ImGui::SliderFloat("FresnelR0", &fresnelR0, 0.0f, 1.0f))
+		if (KiaHaloUI::DragFloat("FresnelR0", fresnelR0, 0.01f, 0.0f, 1.0f, "XYZ"))
 		{
 			currRitem->Mat->SetFresnelR0(fresnelR0);
 			currRitem->Mat->NumFramesDirty = NumFrameResource;
@@ -597,6 +633,12 @@ void RenderLab::RenderImGui()
 		if (ImGui::SliderFloat("Roughness", &roughness, 0.005f, 1.0f))
 		{
 			currRitem->Mat->SetRoughness(roughness);
+			currRitem->Mat->NumFramesDirty = NumFrameResource;
+		}
+
+		if (ImGui::SliderFloat("Matellic", &matellic, 0.005f, 1.0f))
+		{
+			currRitem->Mat->SetMatellic(matellic);
 			currRitem->Mat->NumFramesDirty = NumFrameResource;
 		}
 	}
@@ -612,31 +654,45 @@ void RenderLab::RenderImGui()
 
 	ImGui::Begin("World");                          // Create a window called "Hello, world!" and append into it.
 
-	ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-	ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-	ImGui::Checkbox("Another Window", &show_another_window);
-
-	ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-	ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-	if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-		counter++;
-	ImGui::SameLine();
-	ImGui::Text("counter = %d", counter);
-
 	ImGui::Text("Application average %.1f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
+	//ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+	//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+	//ImGui::Checkbox("Another Window", &show_another_window);
+
+	//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+	ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+	//if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+	//	counter++;
+	//ImGui::SameLine();
+	//ImGui::Text("counter = %d", counter);
+
 	ImGui::SeparatorText("Main Light");
-	ImVec4 lightColor = { mMainLight.Strength.x,mMainLight.Strength.y, mMainLight.Strength.z, 1.0f };
-	float lightDir[3] = { mMainLight.Direction.x,mMainLight.Direction.y,mMainLight.Direction.z };
-	if (ImGui::ColorEdit3("Light Color", (float*)&lightColor))
+	ImVec4 lightColor1 = { mMainLight1.Strength.x,mMainLight1.Strength.y, mMainLight1.Strength.z, 1.0f };
+	float lightDir1[3] = { mMainLight1.Direction.x,mMainLight1.Direction.y,mMainLight1.Direction.z };
+	if (ImGui::ColorEdit3("Light Color1", (float*)&lightColor1))
 	{
-		mMainLight.Strength = { lightColor.x, lightColor.y, lightColor.z };
+		mMainLight1.Strength = { lightColor1.x, lightColor1.y, lightColor1.z };
 	}
-	if (ImGui::SliderFloat3("Lirght Dir", lightDir, -180.0f, 180.0f))
+	if (ImGui::SliderFloat3("Lirght Dir1", lightDir1, -180.0f, 180.0f))
 	{
-		mMainLight.Direction = { lightDir[0], lightDir[1], lightDir[2] };
+		mMainLight1.Direction = { 
+			lightDir1[0], 
+			lightDir1[1],
+			lightDir1[2]
+		};
 	}
+	/*ImVec4 lightColor2 = { mMainLight2.Strength.x,mMainLight2.Strength.y, mMainLight2.Strength.z, 1.0f };
+	float lightDir2[3] = { mMainLight2.Direction.x,mMainLight2.Direction.y,mMainLight2.Direction.z };
+	if (ImGui::ColorEdit3("Light Color2", (float*)&lightColor2))
+	{
+		mMainLight2.Strength = { lightColor2.x, lightColor2.y, lightColor2.z };
+	}
+	if (ImGui::SliderFloat3("Lirght Dir2", lightDir2, -180.0f, 180.0f))
+	{
+		mMainLight2.Direction = { lightDir2[0], lightDir2[1], lightDir2[2] };
+	}*/
 
 	ImGui::End();
 

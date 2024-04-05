@@ -75,6 +75,9 @@
     <ClCompile Include="src\RenderObjects.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\Materials.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RenderLab.h">
@@ -135,6 +138,9 @@
       <Filter>Dx12Render</Filter>
     </ClInclude>
     <ClInclude Include="src\RenderObjects.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Materials.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

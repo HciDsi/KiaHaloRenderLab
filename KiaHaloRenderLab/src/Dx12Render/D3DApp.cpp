@@ -222,17 +222,17 @@ void D3DApp::CreateDescriptorHeap()
 	);
 
 	// 创建常量缓冲区、着色器资源视图和无序访问视图（CBV/SRV/UAV）描述符堆
-	D3D12_DESCRIPTOR_HEAP_DESC srvDesc;
-	srvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; 
-	srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;       
-	srvDesc.NumDescriptors = 1;                            
-	srvDesc.NodeMask = 0;
-	ThrowIfFailed(
-		mDevice->CreateDescriptorHeap(
-			&srvDesc,                                       // 描述符堆描述符
-			IID_PPV_ARGS(&mSrvHeap)                         // 创建CBV/SRV/UAV描述符堆
-		)
-	);
+	//D3D12_DESCRIPTOR_HEAP_DESC srvDesc;
+	//srvDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; 
+	//srvDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;       
+	//srvDesc.NumDescriptors = 1;                            
+	//srvDesc.NodeMask = 0;
+	//ThrowIfFailed(
+	//	mDevice->CreateDescriptorHeap(
+	//		&srvDesc,                                       // 描述符堆描述符
+	//		IID_PPV_ARGS(&mSrvHeap)                         // 创建CBV/SRV/UAV描述符堆
+	//	)
+	//);
 }
 
 void D3DApp::CreateRtv()
@@ -274,6 +274,7 @@ void D3DApp::CreateDsv()
 	rd.DepthOrArraySize = 1;
 	rd.Alignment = 0;
 	rd.MipLevels = 1;
+	//rd.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	rd.Format = mDepthStencilFormat;
 	rd.SampleDesc.Count = 1;
 	rd.SampleDesc.Quality = 0;
@@ -314,7 +315,7 @@ void D3DApp::CreateDsv()
 
 void D3DApp::CreateSrv()
 {
-	D3D12_RESOURCE_DESC rd;
+	/*D3D12_RESOURCE_DESC rd;
 	rd.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	rd.Width = mClientWidth;
 	rd.Height = mClientHeight;
@@ -354,7 +355,7 @@ void D3DApp::CreateSrv()
 		mShaderResouceBuffer.Get(),
 		&srvDesc,
 		mSrvHeap->GetCPUDescriptorHandleForHeapStart()
-	);
+	);*/
 
 	/*mCmdList->ResourceBarrier(
 		1,

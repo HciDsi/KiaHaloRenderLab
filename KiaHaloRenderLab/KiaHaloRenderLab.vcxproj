@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Materials.cpp" />
     <ClCompile Include="src\RenderObjects.cpp" />
     <ClCompile Include="src\Dx12Render\Camera.cpp" />
     <ClCompile Include="src\Dx12Render\D3DApp.cpp" />
@@ -163,6 +164,7 @@
     <ClCompile Include="src\RenderLab.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Materials.h" />
     <ClInclude Include="src\RenderObjects.h" />
     <ClInclude Include="src\Dx12Render\Camera.h" />
     <ClInclude Include="src\Dx12Render\D3DApp.h" />

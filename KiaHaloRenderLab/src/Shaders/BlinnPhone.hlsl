@@ -1,4 +1,6 @@
+#include "Util/MathUtil.hlsl"
 #include "Util/LightUtil.hlsl"
+
 
 // Constant data that varies per frame.
 
@@ -59,19 +61,25 @@ VertexOut VS(VertexIn v)
 float4 PS(VertexOut o) : SV_Target
 {
     float3 V = normalize(gEyePosW - o.posW);
-    float3 L = normalize(-gLights[0].Dir);
     float3 N = normalize(o.normalW);
+    float3 L = normalize(-gLights[0].Dir);
     float3 H = normalize(V + L);
     
-    float3 albedo = gAmbientLight * gDiffuseAlbedo.xyz;
-    
-    float3 diffuse = gLights[0].Strength * gDiffuseAlbedo.xyz * saturate(dot(N, L));
-    
-    float3 F = gFresnelR0 + (1 - gFresnelR0) * pow(1 - saturate(dot(N, L)), 5);
+    float3 albedo = gAmbientLight.xyz * gDiffuseAlbedo.xyz;
+    float3 diffuse = float3(0, 0, 0);
+    float3 specular = float3(0, 0, 0);
+
     float m = gRoughness * 256.0f;
-    float3 specular = F * gLights[0].Strength * pow(saturate(dot(N, H)), m);
+    float3 F = gFresnelR0 + (1 - gFresnelR0) * pow(1 - saturate(dot(N, L)), 5);
+
+    diffuse += gLights[0].Strength * gDiffuseAlbedo.xyz * pow(saturate(dot(N, L)) * 0.5 + 0.5, 2);
+    
+    specular += F * gLights[0].Strength * pow(saturate(dot(N, H)), m);
     
     float3 lr = albedo + diffuse + specular;
+    
+    lr /= (lr + 1.0);
+    lr = pow(lr, 1.0 / 2.2);
     
     return float4(lr, 1.0f);
 }
